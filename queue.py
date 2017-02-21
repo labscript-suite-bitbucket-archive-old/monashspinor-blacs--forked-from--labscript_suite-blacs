@@ -18,6 +18,7 @@ import Queue
 import threading
 import time
 import sys
+from subprocess import check_output
 
 if 'PySide' in sys.modules.copy():
     from PySide.QtCore import *
@@ -36,6 +37,13 @@ from connections import ConnectionTable
 from blacs.tab_base_classes import MODE_MANUAL, MODE_TRANSITION_TO_BUFFERED, MODE_TRANSITION_TO_MANUAL, MODE_BUFFERED  
 
 FILEPATH_COLUMN = 0
+notification_sounds = True
+
+def play_sound(filepath, use_vlc=True):
+    if use_vlc:
+        check_output("\"C:\\Program Files\\VideoLAN\\VLC\\vlc.exe\" --play-and-exit " + filepath, shell=True)
+    else:
+        check_output("powershell -c (New-Object Media.SoundPlayer \"%s\").PlaySync();" % filepath, shell=True)
 
 class QueueTreeview(QTreeView):
     def __init__(self,*args,**kwargs):
@@ -591,6 +599,9 @@ class QueueManager(object):
                 #TODO: fix potential race condition if BLACS is closing when this line executes?
                 self.BLACS.tablist[self.master_pseudoclock].start_run(experiment_finished_queue)
                 
+                # Play notification sound
+                if notification_sounds:
+                    play_sound("reload.wav")
                                                 
                 # Wait for notification of the end of run:
                 abort = False
@@ -643,6 +654,10 @@ class QueueManager(object):
                 
                 logger.info('Run complete')
                 self.set_status(now_running_text+"<br>Sequence done, saving data...")
+                # Play notification sound
+                if notification_sounds:
+                    play_sound("coin.wav")
+
             # End try/except block here
             except Exception:
                 logger.exception("Error in queue manager execution. Queue paused.")
